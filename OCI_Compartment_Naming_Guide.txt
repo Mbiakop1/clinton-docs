@@ -1,0 +1,130 @@
+====================================================================================================
+OCI COMPARTMENT NAMING GUIDE (cmr)
+====================================================================================================
+
+Version 1.0, 28 Sep 2026. Companion to OCI_Resource_Naming_Standard (section 9).
+Who creates compartments: the Cloud architecture team, on request. This guide tells you what the
+name will be, or what to put in your request.
+
+
+1. THE RULE IN ONE LINE
+-----------------------
+
+   A compartment name is its full path, joined by hyphens:   <parent-name>-<segment>
+
+   cmr  ->  cmr-prd  ->  cmr-prd-cbs
+   cmr  ->  cmr-npd  ->  cmr-npd-cbs  ->  cmr-npd-cbs-uat
+
+
+2. THE COMPARTMENT TREE
+-----------------------
+
+   Root (tenancy)          no resources; break-glass administrators only
+   └── cmr                 landing zone: tenancy-wide guardrails
+       ├── cmr-soc         security tooling, Cloud Guard, SIEM
+       ├── cmr-log         log and audit archive
+       ├── cmr-net         hub VCNs, DRGs, firewalls, DNS
+       ├── cmr-plat        CI/CD, images, observability, Exadata
+       ├── cmr-cyv         cyber-recovery vault (own admins)
+       ├── cmr-prd         PRODUCTION, both regions, DR included
+       │   ├── cmr-prd-net       production spoke VCNs
+       │   ├── cmr-prd-cbs       core banking
+       │   └── cmr-prd-pay       payments
+       └── cmr-npd         NON-PRODUCTION: dev and uat
+           ├── cmr-npd-net       non-production spoke VCNs
+           ├── cmr-npd-cbs       core banking dev and uat
+           │   └── cmr-npd-cbs-uat   optional UAT-only split
+           └── cmr-npd-pay       payments dev and uat
+
+
+3. HOW TO NAME A NEW APPLICATION COMPARTMENT (3 STEPS)
+------------------------------------------------------
+
+   STEP 1  Production or non-production?
+             Production (live customers, production data, DR copies) ....... cmr-prd
+             Non-production (dev and uat together) ......................... cmr-npd
+
+   STEP 2  Add the application code from the Application Register:
+             cmr-prd  +  cbs   =  cmr-prd-cbs
+             cmr-npd  +  pay   =  cmr-npd-pay
+
+   STEP 3  Only if UAT needs different access or data rules from dev (for example masked
+           production data), add a child compartment with the environment code:
+             cmr-npd-cbs  +  uat  =  cmr-npd-cbs-uat
+
+   Every new application normally gets TWO compartments: cmr-prd-<app> and cmr-npd-<app>.
+
+
+4. ALLOWED SEGMENTS
+-------------------
+
+   Level 1   cmr                              always
+   Level 2   prd, npd                         production / non-production tier
+             soc, log, net, plat, cyv         shared functions (created by the Cloud team only)
+   Level 3   <app>                            application code, e.g. cbs, pay
+             net                              spoke networks of that tier
+   Level 4   uat, dev                         optional environment split, under cmr-npd-<app> only
+
+
+5. RULES
+--------
+
+  - Lowercase letters, digits and hyphens only. Each segment is 2 to 5 characters.
+  - No region in the name: one compartment covers both Casablanca (cas) and Johannesburg (jnb).
+  - No DR compartment: DR copies of production live in the same cmr-prd-<app> compartment as the
+    primary. They are told apart by the region field in the resource name.
+  - No resource type, no sequence number (no -01), no words such as Production, Shared, Test, New.
+  - npd is used ONLY in compartment names. In resource names the environment is dev, uat or prd.
+  - Maximum 4 levels below the root (OCI allows 6; the rest is kept for future use).
+  - Description is mandatory: one sentence with the purpose and the owning team.
+    Never a person's name, customer name or confidential project name.
+  - Validation pattern:  ^cmr(-[a-z][a-z0-9]{1,4}){0,3}$
+
+
+6. WHERE DOES MY RESOURCE GO?
+-----------------------------
+
+   Resource name                         Compartment
+   ------------------------------------  ----------------
+   cmr-prd-cas-vm-cbs-ol-01              cmr-prd-cbs
+   cmr-prd-jnb-vm-cbs-ol-01  (DR copy)   cmr-prd-cbs      (same compartment as the primary)
+   cmr-dev-cas-adb-pay-atp-01            cmr-npd-pay
+   cmr-uat-cas-adb-pay-atp-01            cmr-npd-pay      (or cmr-npd-pay-uat if split)
+   cmr-prd-cas-vcn-cbs-01                cmr-prd-net
+   cmr-prd-cas-drg-hub-01                cmr-net
+   cmr-prd-cas-bkt-soc-aud-01            cmr-log
+
+
+7. CORRECT AND INCORRECT EXAMPLES
+---------------------------------
+
+   Name                      OK?   Why
+   ------------------------  ----  ----------------------------------------------------------
+   cmr-prd-cbs               Yes   Production core banking
+   cmr-npd-pay               Yes   Non-production payments (dev and uat)
+   cmr-npd-cbs-uat           Yes   Optional UAT-only split
+   Production                No    Not a full path; appears many times in the tenancy
+   cmr-prd-cas-cbs           No    No region in compartment names
+   cmr-prd-cbs-01            No    No sequence numbers
+   cmr-dr-cbs                No    No DR compartments; DR lives in cmr-prd-cbs
+   cmr-dev-cbs               No    Use the tier npd at level 2; dev only as an optional level-4 split
+   cmr-prd-cmp-cbs           No    No resource type in compartment names
+   CMR-PRD-CBS               No    Lowercase only
+
+
+8. WHY COMPARTMENTS ARE NAMED DIFFERENTLY FROM RESOURCES
+--------------------------------------------------------
+
+  - A compartment is a folder, not a resource: it spans both regions and, in npd, both dev and
+    uat, so region and environment fields would be false.
+  - Its name is written into IAM policies (e.g. "... in compartment cmr:cmr-prd:cmr-prd-cbs"),
+    so it must be short, stable and easy to review.
+  - The full path makes every name unique in the tenancy, so audit logs and cost reports are
+    never ambiguous.
+
+
+9. NEED A NEW COMPARTMENT?
+--------------------------
+
+   Ask the Cloud architecture team with: application code, tier (prd, npd or both), owning team,
+   one-sentence purpose, and whether a UAT-only split is needed (with the reason).

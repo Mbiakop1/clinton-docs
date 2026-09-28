@@ -1,0 +1,422 @@
+====================================================================================================
+OCI RESOURCE NAMING STANDARD  -  QUALIFIER GUIDE (cmr)
+====================================================================================================
+
+Version 1.0, 28 Sep 2026. Companion to OCI_Resource_Naming_Standard.txt (sections 6.5 and 8). This
+guide answers one question: which qualifier, if any, do I put in a name, and which value do I
+choose?
+
+1. WHAT THE QUALIFIER IS
+------------------------
+
+   <org>-<env>-<rgn>-<type>-<app>[-<qual>]-<nn>
+                                   ^^^^^^
+   cmr-prd-cas-vm-cbs-ol-01          qualifier = ol  (Oracle Linux)
+   cmr-prd-cas-vcn-cbs-01            no qualifier (VCN does not take one)
+
+The qualifier is the optional sixth field. It says which variant of the resource type this is: the
+OS family of a server, the tier of a subnet, whether a load balancer faces the internet, what a
+bucket holds, and so on. The resource type decides everything: whether a qualifier is allowed, and
+which values are allowed.
+
+2. HOW TO DECIDE IN THREE STEPS
+-------------------------------
+
+   STEP 1  Find your resource type code in section 4 of this guide.
+   STEP 2  Read the rule next to it:
+             REQUIRED  -> you MUST add one value from the list shown.
+             OPTIONAL  -> add one value from the list only if it helps tell
+                          resources apart (see the "use when" note).
+             NONE      -> do NOT add a qualifier. Go straight to <nn>.
+   STEP 3  Pick exactly ONE value from the list (section 5). Use the
+           "Choose it when" column. Never type anything that is not listed.
+
+3. RULES THAT ALWAYS APPLY
+--------------------------
+
+  - Exactly one qualifier value, never two (not cmr-prd-cas-vm-cbs-ol-web-01).
+  - Lowercase letters and digits only, 2 to 6 characters, taken from the lists in this guide.
+  - No versions (ol8, win2022, 19c) in the names of servers or databases: an upgrade would make the
+    name wrong. Only custom images (img) include the version, because images never change.
+  - No free words: never new, old, final, temp, test, bak, copy, v2, primary, standby, dr, or a
+    person's name.
+  - Need to tell two resources apart and the type takes no qualifier? Use the next nn (01, 02...),
+    or ask for a sub-application code (for example cbsbt = core banking batch). Do not invent a
+    qualifier.
+  - A resource and its DR copy use the SAME qualifier. Only the region field changes (cas -> jnb).
+  - Need a value that is not listed? Ask the Cloud CoE to add it to the registry. The validator
+    rejects anything unlisted.
+
+
+4. QUICK LOOKUP: QUALIFIER RULE FOR EVERY RESOURCE TYPE
+-------------------------------------------------------
+
+4.1 REQUIRED - you must add one value
+
+Type code(s)        Resource                      List to use (section 5)   Example
+------------------  ----------------------------  ------------------------  ----------------------------------
+vm, bm              VM / bare metal instance      A. OS family              cmr-prd-cas-vm-cbs-ol-01
+icf, ipl            Instance configuration /      A. OS family              cmr-prd-cas-ipl-pay-ol-01
+                    pool
+img                 Custom image                  A. OS family + version    cmr-prd-cas-img-gold-ol9-20260915
+adb                 Autonomous Database           B. ADB workload           cmr-prd-cas-adb-pay-atp-01
+dbs                 Base Database DB system       C. DB topology (si, rac)  cmr-prd-cas-dbs-cbs-rac-01
+mys, pgs            MySQL HeatWave / PostgreSQL   C. DB topology (si, ha)   cmr-prd-cas-mys-pay-ha-01
+snt, nsg, scl, rtb  Subnet / NSG / security list  D. Network tier           cmr-prd-cas-snt-cbs-db-01
+                    / route table
+lb, nlb, apg, waf   Load balancers / API Gateway  E. Exposure               cmr-prd-cas-lb-cbs-ext-01
+                    / WAF policy
+bkt                 Object Storage bucket         F. Bucket purpose         cmr-prd-cas-bkt-cbs-bkp-01
+key                 Vault master encryption key   G. What the key protects  cmr-prd-cas-key-cbs-tde-01
+scrt                Vault secret                  H. Secret kind            cmr-prd-cas-scrt-pay-dbc-01
+pol, grp            IAM policy / IAM group        I. IAM role               cmr-prd-pol-cbs-oper-01
+                    (global)
+dgp                 Dynamic group (global)        J. Dynamic group members  cmr-prd-dgp-pay-fn-01
+log                 Log                           K. Log source             cmr-prd-cas-log-cbs-flow-01
+alm                 Alarm                         L. Alarm signal           cmr-prd-cas-alm-pay-lat-01
+rpc                 Remote peering connection     M. Peer region            cmr-prd-cas-rpc-hub-jnb-01
+dra                 DRG attachment                N. Attached network       cmr-prd-cas-dra-cbs-vcn-01
+
+4.2 OPTIONAL - add one value only when it helps
+
+Type code(s)   Resource            List to use       Use it when           Example
+-------------  ------------------  ----------------  --------------------  ------------------------------
+onp, vnp       OKE node pools      O1. Pool purpose  The cluster has more  cmr-prd-cas-onp-pay-app-01
+                                                     than one node pool
+blv            Block volume        O2. Volume        An instance has more  cmr-prd-cas-blv-cbs-data-01
+                                   content           than one data volume
+stm, que, ons  Stream / queue /    O3. Purpose /     The application has   cmr-prd-cas-ons-cbs-ops-01
+               notification topic  audience          more than one of
+                                                     them
+
+4.3 NONE - never add a qualifier
+
+Area                      Type codes that take NO qualifier
+------------------------  --------------------------------------------------------------------------
+Identity and governance   idd, qta, bgt, szn, cgt
+Networking                vcn, dho, drg, drt, igw, ngw, sgw, lpg, fcv, ips, cpe, pip, nfw, nfp, dnv,
+                          dre, tsp, pep
+Compute                   asc, cln, bov, vgp, bvp, dvh, crv, cin, osm
+Kubernetes                oke
+Databases                 avc, acd, dbh, exi, exc, nsq, ogg, dsf
+Storage                   fss, mnt
+Security                  vlt, cert, ca, bst, vsr
+Integration               apd, fna, fn, stp, evr, sch, oic
+Observability             lgg, dsh, apm, hck, lga
+Data and analytics        dis, dfa, dfp, dsp, dsn, dsm, oac, dct, bds
+DevOps and DR             dop, bpl, dpl, crp, arp, stk, dpg
+
+Example of a type with no qualifier: cmr-prd-cas-vcn-cbs-01 (VCN), cmr-prd-cas-vlt-kms-01 (vault),
+cmr-prd-cas-oke-pay-01 (OKE cluster).
+
+5. THE QUALIFIER LISTS
+----------------------
+
+A. OS FAMILY  -  for vm, bm, icf, ipl (REQUIRED); img uses it + version
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+ol       Oracle Linux            The image is Oracle Linux, any      cmr-prd-cas-vm-cbs-ol-01
+                                 version
+rhel     Red Hat Enterprise      The image is RHEL, any version      cmr-prd-cas-vm-pay-rhel-01
+         Linux
+win      Windows Server          The image is Windows Server, any    cmr-uat-cas-vm-cbs-win-02
+                                 version
+ubu      Ubuntu                  The image is Ubuntu, any version    cmr-dev-cas-vm-pay-ubu-01
+
+Note: Custom images only: add the major version to the family (ol9, rhel9, win22, ubu24) and use the
+build date as the number: cmr-prd-cas-img-gold-ol9-20260915.
+
+B. AUTONOMOUS DATABASE WORKLOAD  -  for adb (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+atp      Autonomous Transaction  OLTP, application back-ends         cmr-prd-cas-adb-pay-atp-01
+         Processing
+adw      Autonomous Data         Analytics, reporting, data marts    cmr-prd-cas-adb-cbs-adw-01
+         Warehouse
+ajd      Autonomous JSON         Document / JSON workloads           cmr-dev-cas-adb-pay-ajd-01
+         Database
+apx      APEX Application        APEX low-code applications          cmr-uat-cas-adb-cbs-apx-01
+         Development
+
+C. DATABASE TOPOLOGY  -  for dbs (si or rac), mys and pgs (si or ha) (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+si       Single instance         One database node                   cmr-uat-cas-dbs-cbs-si-01
+rac      Real Application        Base Database system with 2 or      cmr-prd-cas-dbs-cbs-rac-01
+         Clusters                more RAC nodes (dbs only)
+ha       High availability       MySQL HeatWave or PostgreSQL        cmr-prd-cas-pgs-pay-ha-01
+                                 deployed with its HA option (mys,
+                                 pgs only)
+
+Note: Do not add the engine or version (ora, 19c): the type already says which engine it is.
+
+D. NETWORK TIER  -  for snt, nsg, scl, rtb (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+dmz      Internet-facing zone    Public subnet for public load       cmr-prd-cas-snt-cbs-dmz-01
+                                 balancers or WAF front ends. The
+                                 only public tier
+lb       Load balancer tier      Private load balancers              cmr-prd-cas-snt-cbs-lb-01
+web      Web tier                Web servers, reverse proxies        cmr-prd-cas-nsg-cbs-web-01
+app      Application tier        Application servers, middleware     cmr-prd-cas-snt-cbs-app-01
+db       Database tier           Databases of any kind               cmr-prd-cas-snt-cbs-db-01
+wrk      OKE worker nodes        Kubernetes worker node subnet       cmr-prd-cas-snt-pay-wrk-01
+kapi     Kubernetes API          OKE control-plane endpoint subnet   cmr-prd-cas-snt-pay-kapi-01
+         endpoint
+pod      OKE pods                Pod subnet (VCN-native pod          cmr-prd-cas-snt-pay-pod-01
+                                 networking)
+mgmt     Management              Bastions, jump hosts, admin         cmr-prd-cas-snt-hub-mgmt-01
+                                 tooling
+pe       Private endpoints       Private endpoints of OCI services   cmr-prd-cas-snt-cbs-pe-01
+fw       Firewall                Network Firewall subnet in the hub  cmr-prd-cas-snt-hub-fw-01
+itg      Integration             Integration platform, API           cmr-prd-cas-snt-pay-itg-01
+                                 gateways, file transfer
+drg      DRG route table (rtb    Route table attached to a DRG, not  cmr-prd-cas-rtb-hub-drg-01
+         only)                   to a subnet
+igw      Internet gateway route  Route table attached to an          cmr-prd-cas-rtb-hub-igw-01
+         table (rtb only)        internet gateway
+
+Note: NSGs, security lists and route tables take the tier of the subnet or servers they protect or
+serve. A subnet hosting two tiers is a design smell: split it, or use the tier of its main workload.
+
+E. EXPOSURE  -  for lb, nlb, apg, waf (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+ext      External                Reachable from the internet or      cmr-prd-cas-lb-cbs-ext-01
+                                 from partners outside the bank
+int      Internal                Reachable only from the bank's own  cmr-prd-cas-nlb-pay-int-01
+                                 networks
+
+Note: If in doubt, it is ext: anything a partner or customer can reach counts as external. SOC teams
+rely on this value.
+
+F. BUCKET PURPOSE  -  for bkt (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+data     Application data        Files the application reads and     cmr-prd-cas-bkt-pay-data-01
+                                 writes
+log      Logs                    Application or service logs         cmr-prd-cas-bkt-cbs-log-01
+                                 exported to Object Storage
+bkp      Backups                 RMAN, export or application         cmr-prd-cas-bkt-cbs-bkp-01
+                                 backups
+arc      Archive                 Long-term retention, rarely read    cmr-prd-cas-bkt-cbs-arc-01
+exp      Exchange                Files exchanged with partners or    cmr-prd-cas-bkt-pay-exp-01
+                                 other systems
+raw      Raw data zone           Data lake landing zone              cmr-prd-cas-bkt-cbs-raw-01
+cur      Curated data zone       Cleaned, modelled data lake zone    cmr-prd-cas-bkt-cbs-cur-01
+tfs      Terraform state         Terraform state files (versioning   cmr-prd-cas-bkt-cicd-tfs-01
+                                 on, pipelines only)
+aud      Audit archive           Audit and security log archive      cmr-prd-cas-bkt-soc-aud-01
+                                 (retention-locked)
+
+Note: One purpose per bucket. Backups and logs of the same application go in two buckets (-bkp-01
+and -log-01), not one.
+
+G. WHAT THE KEY PROTECTS  -  for key (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+tde      Oracle Transparent      Database encryption keys            cmr-prd-cas-key-cbs-tde-01
+         Data Encryption
+bkt      Object Storage          Customer-managed encryption of      cmr-prd-cas-key-cbs-bkt-01
+                                 buckets
+blk      Block and boot volumes  Customer-managed encryption of      cmr-prd-cas-key-cbs-blk-01
+                                 volumes
+scrt     Vault secrets           Key that encrypts secrets           cmr-prd-cas-key-pay-scrt-01
+sgn      Signing                 Code, token or document signing     cmr-prd-cas-key-pay-sgn-01
+oke      Kubernetes secrets      Encryption of OKE secrets           cmr-prd-cas-key-pay-oke-01
+
+Note: Key rotation creates a new key version, not a new name.
+
+H. SECRET KIND  -  for scrt (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+dbc      Database credential     Database user password              cmr-prd-cas-scrt-pay-dbc-01
+api      API key or token        Keys and tokens for APIs            cmr-prd-cas-scrt-pay-api-01
+ssh      SSH key                 SSH private keys                    cmr-prd-cas-scrt-cbs-ssh-01
+tls      TLS material            Certificates and private keys       cmr-prd-cas-scrt-cbs-tls-01
+                                 stored as secrets
+svc      Service account         Credentials of a technical account  cmr-prd-cas-scrt-cbs-svc-01
+wlt      Database wallet         Oracle wallet files                 cmr-prd-cas-scrt-pay-wlt-01
+
+Note: Never put the account name, username or target host in the secret name. A secret name in
+pending deletion cannot be reused: take the next nn.
+
+I. IAM ROLE  -  for pol and grp (REQUIRED, global: no region)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+admin    Administrator           Full management of the scope        cmr-prd-grp-cbs-admin-01
+oper     Operator                Day-to-day operation (start, stop,  cmr-prd-pol-cbs-oper-01
+                                 scale, restore), no create/delete
+read     Read-only               Viewing only                        cmr-prd-grp-pay-read-01
+audit    Auditor                 Read-only plus audit and security   cmr-prd-grp-soc-audit-01
+                                 logs
+deploy   Pipeline deployer       Used by CI/CD pipelines to deploy   cmr-prd-pol-pay-deploy-01
+brkgl    Break-glass             Emergency access, normally unused   cmr-prd-grp-cbs-brkgl-01
+                                 and monitored
+
+Note: The group and the policy that grants it rights use the same role value.
+
+J. DYNAMIC GROUP MEMBERS  -  for dgp (REQUIRED, global: no region)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+fn       Functions               Functions call OCI APIs             cmr-prd-dgp-pay-fn-01
+vm       Instances               Instances call OCI APIs (instance   cmr-prd-dgp-cbs-vm-01
+                                 principals)
+oke      OKE workloads           Kubernetes workloads call OCI APIs  cmr-prd-dgp-pay-oke-01
+adb      Autonomous Databases    ADBs call OCI services (resource    cmr-prd-dgp-pay-adb-01
+                                 principal)
+dis      Data Integration        Data Integration workspaces         cmr-prd-dgp-cbs-dis-01
+dfa      Data Flow               Data Flow applications              cmr-prd-dgp-cbs-dfa-01
+apg      API Gateways            API Gateways call functions or      cmr-prd-dgp-pay-apg-01
+                                 backends
+
+K. LOG SOURCE  -  for log (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+flow     VCN flow logs           Network traffic logs of a subnet    cmr-prd-cas-log-cbs-flow-01
+                                 or VCN
+lb       Load balancer           Access and error logs of a load     cmr-prd-cas-log-cbs-lb-01
+                                 balancer
+apg      API Gateway             Access and execution logs           cmr-prd-cas-log-pay-apg-01
+fn       Functions               Function invocation logs            cmr-prd-cas-log-pay-fn-01
+waf      WAF                     Web application firewall logs       cmr-prd-cas-log-cbs-waf-01
+os       Operating system        OS / agent logs from instances      cmr-prd-cas-log-cbs-os-01
+app      Application             Custom application logs             cmr-prd-cas-log-pay-app-01
+oke      Kubernetes              OKE cluster and workload logs       cmr-prd-cas-log-pay-oke-01
+aud      Audit                   Audit log copies                    cmr-prd-cas-log-soc-aud-01
+
+L. ALARM SIGNAL  -  for alm (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+cpu      CPU                     CPU utilisation                     cmr-prd-cas-alm-cbs-cpu-01
+mem      Memory                  Memory utilisation                  cmr-prd-cas-alm-cbs-mem-01
+dsk      Disk                    Disk space or IO                    cmr-prd-cas-alm-cbs-dsk-01
+lat      Latency                 Response time                       cmr-prd-cas-alm-pay-lat-01
+err      Errors                  Error rate or failed requests       cmr-prd-cas-alm-pay-err-01
+avl      Availability            Up/down, health checks              cmr-prd-cas-alm-pay-avl-01
+cap      Capacity                Quotas, storage or connection       cmr-prd-cas-alm-cbs-cap-01
+                                 limits
+lag      Replication lag         Data Guard or replication delay     cmr-prd-cas-alm-cbs-lag-01
+
+Note: Severity (Critical, Error, Warning, Info) is set in the alarm itself, not in the name.
+
+M. PEER REGION  -  for rpc (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+cas      Casablanca              The other side of the peering is    cmr-prd-jnb-rpc-hub-cas-01
+                                 in Casablanca
+jnb      Johannesburg            The other side of the peering is    cmr-prd-cas-rpc-hub-jnb-01
+                                 in Johannesburg
+
+Note: Each side names the other, so the pair documents itself.
+
+N. ATTACHED NETWORK  -  for dra (REQUIRED)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+vcn      VCN                     A VCN attached to the DRG           cmr-prd-cas-dra-cbs-vcn-01
+fcv      FastConnect             A FastConnect virtual circuit       cmr-prd-cas-dra-hub-fcv-01
+                                 attached to the DRG
+ips      IPSec VPN               A Site-to-Site VPN attached to the  cmr-prd-cas-dra-hub-ips-01
+                                 DRG
+rpc      Remote peering          A remote peering connection         cmr-prd-cas-dra-hub-rpc-01
+                                 attached to the DRG
+
+Note: org, env and app are those of the attached network, not of the hub.
+
+O1. NODE POOL PURPOSE  -  for onp, vnp (OPTIONAL)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+sys      System                  Cluster add-ons (ingress,           cmr-prd-cas-onp-pay-sys-01
+                                 monitoring agents)
+app      Application             Application workloads               cmr-prd-cas-onp-pay-app-01
+gpu      GPU                     GPU workloads                       cmr-prd-cas-onp-pay-gpu-01
+batch    Batch                   Batch and scheduled jobs            cmr-prd-cas-vnp-pay-batch-01
+
+Note: Leave it out when the cluster has only one pool: cmr-prd-cas-onp-pay-01.
+
+O2. BLOCK VOLUME CONTENT  -  for blv (OPTIONAL)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+data     Data                    Application or database data files  cmr-prd-cas-blv-cbs-data-01
+log      Logs                    Log files                           cmr-prd-cas-blv-cbs-log-01
+redo     Redo logs               Oracle redo logs                    cmr-prd-cas-blv-cbs-redo-01
+arc      Archive logs            Oracle archive logs                 cmr-prd-cas-blv-cbs-arc-01
+bin      Binaries                Software installation               cmr-prd-cas-blv-cbs-bin-01
+
+Note: Leave it out when the instance has only one data volume: cmr-prd-cas-blv-cbs-01.
+
+O3. PURPOSE / AUDIENCE  -  for stm, que, ons (OPTIONAL)
+
+Value    Meaning                 Choose it when                      Example
+-------  ----------------------  ----------------------------------  ----------------------------------
+evt      Events                  Business or technical events        cmr-prd-cas-stm-pay-evt-01
+txn      Transactions            Transaction messages                cmr-prd-cas-que-pay-txn-01
+ops      Operations alerts       Topics read by operations / NOC     cmr-prd-cas-ons-cbs-ops-01
+soc      Security alerts         Topics read by the SOC              cmr-prd-cas-ons-cbs-soc-01
+fin      Cost alerts             Budget and FinOps alerts            cmr-prd-cas-ons-cbs-fin-01
+
+Note: Leave it out when the application has only one stream, queue or topic.
+
+
+6. COMMON QUESTIONS
+-------------------
+
+Q: A VM runs Windows and hosts the web tier. Where does "web" go?
+A: Nowhere in the name: VMs take only the OS family (win). If you need the role in the name, ask for
+   a sub-application code (for example cbsweb) and use it in the app field.
+
+Q: My VM was upgraded from Oracle Linux 8 to 9. Do I rename it?
+A: No. The qualifier is ol (family), so the name stays correct.
+
+Q: A load balancer is used by partners over VPN, not the internet. ext or int?
+A: ext. Anything reachable from outside the bank's own networks is external.
+
+Q: I need two VCNs for the same application. The VCN takes no qualifier.
+A: Use the sequence number: cmr-prd-cas-vcn-cbs-01 and cmr-prd-cas-vcn-cbs-02.
+
+Q: I need a bucket for both logs and backups.
+A: Create two buckets: cmr-prd-cas-bkt-cbs-log-01 and cmr-prd-cas-bkt-cbs-bkp-01.
+
+Q: The DR copy of a production database in Johannesburg?
+A: Same qualifier, only the region changes: cmr-prd-cas-dbs-cbs-rac-01 ->
+   cmr-prd-jnb-dbs-cbs-rac-01.
+
+Q: None of the values fit my resource.
+A: Do not invent one. Ask the Cloud CoE to add a value to the registry (normally within five working
+   days).
+
+
+7. CORRECT AND INCORRECT EXAMPLES
+---------------------------------
+
+Name                                OK?    Why
+----------------------------------  -----  -----------------------------------------------------------
+cmr-prd-cas-vm-cbs-ol-01            Yes    vm requires an OS family; ol is listed
+cmr-prd-cas-vcn-cbs-01              Yes    vcn takes no qualifier
+cmr-prd-cas-onp-pay-01              Yes    onp qualifier is optional; one pool only
+cmr-prd-cas-vm-cbs-01               No     vm requires a qualifier (ol, rhel, win or ubu)
+cmr-prd-cas-vm-cbs-ol8-01           No     No versions in server names: use ol
+cmr-prd-cas-vcn-cbs-app-01          No     vcn does not take a qualifier
+cmr-prd-cas-lb-cbs-public-01        No     public is not listed: use ext
+cmr-prd-cas-bkt-cbs-backup-01       No     backup is not listed: use bkp
+cmr-prd-cas-vm-cbs-ol-web-01        No     Only one qualifier value is allowed
+cmr-prd-cas-dbs-cbs-standby-01      No     standby is a role, not a qualifier: use the region field
+                                           (jnb)
+cmr-prd-cas-snt-cbs-public-01       No     Use the tier: dmz for the internet-facing subnet
+
